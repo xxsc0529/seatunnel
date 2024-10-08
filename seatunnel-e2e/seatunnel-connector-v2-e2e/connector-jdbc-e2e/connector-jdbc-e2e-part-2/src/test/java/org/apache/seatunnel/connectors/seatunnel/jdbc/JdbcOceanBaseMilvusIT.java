@@ -86,7 +86,7 @@ import static org.awaitility.Awaitility.given;
         disabledReason = "Currently SPARK and FLINK not support adapt")
 public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource {
 
-    private static final String IMAGE = "oceanbase/oceanbase-ce:vector";
+    private static final String IMAGE = "oceanbase/oceanbase-ce:latest";
 
     private static final String HOSTNAME = "e2e_oceanbase_vector";
     private static final int PORT = 2881;
@@ -127,7 +127,7 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
             };
 
     String driverUrl() {
-        return "https://repo1.maven.org/maven2/com/oceanbase/oceanbase-client/2.4.11/oceanbase-client-2.4.11.jar";
+        return "https://repo1.maven.org/maven2/com/oceanbase/oceanbase-client/2.4.12/oceanbase-client-2.4.12.jar";
     }
 
     @BeforeAll
