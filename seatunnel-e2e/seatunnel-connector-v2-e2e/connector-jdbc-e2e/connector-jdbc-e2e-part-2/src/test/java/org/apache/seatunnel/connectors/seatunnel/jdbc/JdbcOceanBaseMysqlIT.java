@@ -49,7 +49,7 @@ import java.util.Map;
 
 public class JdbcOceanBaseMysqlIT extends JdbcOceanBaseITBase {
 
-    private static final String IMAGE = "oceanbase/oceanbase-ce:latest";
+    private static final String IMAGE = "oceanbase/oceanbase-ce:4.3.3.0-100000132024100711";
 
     private static final String HOSTNAME = "e2e_oceanbase_mysql";
     private static final int PORT = 2881;
