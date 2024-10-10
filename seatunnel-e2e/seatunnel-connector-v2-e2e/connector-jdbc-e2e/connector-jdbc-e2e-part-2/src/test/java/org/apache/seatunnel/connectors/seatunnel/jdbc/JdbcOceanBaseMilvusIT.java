@@ -86,7 +86,7 @@ import static org.awaitility.Awaitility.given;
         disabledReason = "Currently SPARK and FLINK not support adapt")
 public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource {
 
-    private static final String IMAGE = "oceanbase/oceanbase-ce:latest";
+    private static final String IMAGE = "oceanbase/oceanbase-ce:4.3.3.0-100000132024100711";
 
     private static final String HOSTNAME = "e2e_oceanbase_vector";
     private static final int PORT = 2881;
