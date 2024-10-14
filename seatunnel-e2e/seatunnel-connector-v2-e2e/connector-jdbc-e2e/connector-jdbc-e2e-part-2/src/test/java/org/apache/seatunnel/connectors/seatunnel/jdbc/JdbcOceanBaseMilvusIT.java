@@ -318,17 +318,29 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
                 Arrays.stream(fieldNames)
                         .map(this::quoteIdentifier)
                         .collect(Collectors.joining(", "));
-        String placeholders =
-                Arrays.stream(fieldNames).map(f -> "?").collect(Collectors.joining(", "));
+        List<Object[]> fields =
+                testDataSet.getValue().stream()
+                        .map(SeaTunnelRow::getFields)
+                        .collect(Collectors.toList());
 
-        return "INSERT INTO "
-                + buildTableInfoWithSchema(OCEANBASE_DATABASE, OCEANBASE_SINK)
-                + " ("
-                + columns
-                + " )"
-                + " VALUES ("
-                + placeholders
-                + ")";
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder
+                .append("INSERT INTO ")
+                .append(buildTableInfoWithSchema(OCEANBASE_DATABASE, OCEANBASE_SINK))
+                .append(" (")
+                .append(columns)
+                .append(") VALUES ");
+
+        int valuesCount = fields.size();
+        for (int i = 0; i < valuesCount; i++) {
+            String fieldData = Arrays.toString(fields.get(i));
+            sqlBuilder.append("(").append(fieldData, 1, fieldData.length() - 1).append(")");
+
+            if (i < valuesCount - 1) {
+                sqlBuilder.append(", ");
+            }
+        }
+        return sqlBuilder.toString();
     }
 
     private void clearTable(String database, String schema, String table) {
@@ -501,12 +513,14 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
             SeaTunnelRow row =
                     new SeaTunnelRow(
                             new Object[] {
-                                i,
-                                DoubleStream.generate(() -> random.nextDouble() * 10)
-                                        .limit(VECTOR_DIM)
-                                        .mapToObj(num -> String.format("%.4f", num))
-                                        .collect(Collectors.joining(", ", "[", "]")),
-                                "test" + i,
+                                i + 100,
+                                "'"
+                                        + DoubleStream.generate(() -> random.nextDouble() * 10)
+                                                .limit(VECTOR_DIM)
+                                                .mapToObj(num -> String.format("%.4f", num))
+                                                .collect(Collectors.joining(", ", "[", "]"))
+                                        + "'",
+                                "\"" + "test" + i + "\"",
                             });
             rows.add(row);
         }
