@@ -388,7 +388,7 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
         return Lists.newArrayList(
                 "/jdbc_milvus_source_and_oceanbase_sink.conf",
                 "/jdbc_fake_to_oceanbase_sink.conf",
-                "./jdbc_oceanbase_source_and_milvus_sink.conf");
+                "/jdbc_oceanbase_source_and_milvus_sink.conf");
     }
 
     private void initializeJdbcConnection(String jdbcUrl)
