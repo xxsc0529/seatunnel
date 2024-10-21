@@ -23,6 +23,7 @@ import org.apache.seatunnel.api.table.catalog.ConstraintKey;
 import org.apache.seatunnel.api.table.catalog.PrimaryKey;
 import org.apache.seatunnel.api.table.catalog.TablePath;
 import org.apache.seatunnel.api.table.catalog.TableSchema;
+import org.apache.seatunnel.api.table.catalog.VectorIndex;
 import org.apache.seatunnel.api.table.converter.BasicTypeDefine;
 import org.apache.seatunnel.api.table.type.SqlType;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.catalog.utils.CatalogUtils;
@@ -254,6 +255,7 @@ public class OceanBaseMysqlCreateTableSqlBuilder {
                                 })
                         .collect(Collectors.joining(", "));
         String keyName = null;
+        String additionalOptions = "";
         switch (constraintType) {
             case INDEX_KEY:
                 keyName = "KEY";
@@ -265,11 +267,26 @@ public class OceanBaseMysqlCreateTableSqlBuilder {
                 keyName = "FOREIGN KEY";
                 // todo:
                 break;
+            case VECTOR_INDEX_KEY:
+                keyName = "VECTOR INDEX";
+                additionalOptions =
+                        constraintKey.getColumnNames().stream()
+                                .filter(VectorIndex.class::isInstance)
+                                .map(VectorIndex.class::cast)
+                                .map(
+                                        index ->
+                                                String.format(
+                                                        "WITH (distance= %s, type= %s)",
+                                                        index.getMetricType().name(),
+                                                        index.getIndexType().name()))
+                                .collect(Collectors.joining(", "));
+                break;
             default:
                 throw new UnsupportedOperationException(
                         "Unsupported constraint type: " + constraintType);
         }
         return String.format(
-                "%s `%s` (%s)", keyName, constraintKey.getConstraintName(), indexColumns);
+                "%s `%s` (%s) %s",
+                keyName, constraintKey.getConstraintName(), indexColumns, additionalOptions);
     }
 }
