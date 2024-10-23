@@ -209,6 +209,7 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
                                 .withFieldName(VECTOR_FIELD)
                                 .withIndexType(IndexType.HNSW)
                                 .withMetricType(MetricType.L2)
+                                .withExtraParam("{\"M\":4,\"efConstruction\":200}")
                                 .build());
         if (ret.getStatus() != R.Status.Success.getCode()) {
             throw new RuntimeException(
