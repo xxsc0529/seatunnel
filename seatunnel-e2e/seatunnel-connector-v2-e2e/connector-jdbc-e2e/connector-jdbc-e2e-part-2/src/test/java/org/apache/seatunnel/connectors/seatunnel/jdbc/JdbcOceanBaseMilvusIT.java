@@ -107,6 +107,7 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
 
     private static final String MILVUS_HOST = "milvus-e2e";
     private static final String MILVUS_IMAGE = "milvusdb/milvus:2.4-20240711-7e2a9d6b";
+    private static final String MILVUS_PARAM ="{\"M\":4,\"efConstruction\":200}";
     private static final String TOKEN = "root:Milvus";
     private MilvusContainer container;
     private MilvusServiceClient milvusClient;
@@ -209,7 +210,7 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
                                 .withFieldName(VECTOR_FIELD)
                                 .withIndexType(IndexType.HNSW)
                                 .withMetricType(MetricType.L2)
-                                .withExtraParam("{\"M\":4,\"efConstruction\":200}")
+                                .withExtraParam(MILVUS_PARAM)
                                 .build());
         if (ret.getStatus() != R.Status.Success.getCode()) {
             throw new RuntimeException(
@@ -427,7 +428,7 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
 
     OceanBaseCEContainer initOceanbaseContainer() {
         return new OceanBaseCEContainer(IMAGE)
-                .withEnv("MODE", "slim")
+                .withEnv("MODE", "normal")
                 .withEnv("OB_DATAFILE_SIZE", "2G")
                 .withNetwork(NETWORK)
                 .withNetworkAliases(HOSTNAME)
