@@ -107,7 +107,7 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
 
     private static final String MILVUS_HOST = "milvus-e2e";
     private static final String MILVUS_IMAGE = "milvusdb/milvus:2.4-20240711-7e2a9d6b";
-    private static final String MILVUS_PARAM ="{\"M\":4,\"efConstruction\":200}";
+    private static final String MILVUS_PARAM = "{\"M\":4,\"efConstruction\":200}";
     private static final String TOKEN = "root:Milvus";
     private MilvusContainer container;
     private MilvusServiceClient milvusClient;
