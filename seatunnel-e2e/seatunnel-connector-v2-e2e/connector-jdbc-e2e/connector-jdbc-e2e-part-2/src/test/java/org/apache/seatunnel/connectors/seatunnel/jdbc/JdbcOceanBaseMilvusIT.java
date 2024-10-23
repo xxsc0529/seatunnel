@@ -19,7 +19,6 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc;
 
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.common.exception.SeaTunnelRuntimeException;
-import org.apache.seatunnel.common.utils.ExceptionUtils;
 import org.apache.seatunnel.e2e.common.TestResource;
 import org.apache.seatunnel.e2e.common.TestSuiteBase;
 import org.apache.seatunnel.e2e.common.container.ContainerExtendedFactory;
@@ -90,7 +89,7 @@ import static org.awaitility.Awaitility.given;
         disabledReason = "Currently SPARK and FLINK not support adapt")
 public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource {
 
-    private static final String IMAGE = "oceanbase/oceanbase-ce:vector";
+    private static final String IMAGE = "oceanbase/oceanbase-ce:4.3.3.0-100000142024101215";
 
     private static final String HOSTNAME = "e2e_oceanbase_vector";
     private static final int PORT = 2881;
@@ -147,7 +146,6 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
                 .untilAsserted(() -> this.initializeJdbcConnection(jdbcCase.getJdbcUrl()));
 
         createSchemaIfNeeded();
-        createNeededTables();
         this.container =
                 new MilvusContainer(MILVUS_IMAGE)
                         .withNetwork(NETWORK)
@@ -209,7 +207,7 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
                         CreateIndexParam.newBuilder()
                                 .withCollectionName(COLLECTION_NAME)
                                 .withFieldName(VECTOR_FIELD)
-                                .withIndexType(IndexType.FLAT)
+                                .withIndexType(IndexType.HNSW)
                                 .withMetricType(MetricType.L2)
                                 .build());
         if (ret.getStatus() != R.Status.Success.getCode()) {
@@ -382,7 +380,6 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
                 .password(PASSWORD)
                 .database(OCEANBASE_DATABASE)
                 .sinkTable(OCEANBASE_SINK)
-                .createSql(createSqlTemplate())
                 .build();
     }
 
@@ -427,16 +424,6 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
         log.info("oceanbase schema created,sql is" + sql);
     }
 
-    String createSqlTemplate() {
-        return "CREATE TABLE IF NOT EXISTS %s\n"
-                + "(\n"
-                + "book_id varchar(20) NOT NULL,\n"
-                + "book_intro vector(4) DEFAULT NULL,\n"
-                + "book_title varchar(64) DEFAULT NULL,\n"
-                + "primary key (book_id)\n"
-                + ");";
-    }
-
     OceanBaseCEContainer initOceanbaseContainer() {
         return new OceanBaseCEContainer(IMAGE)
                 .withEnv("MODE", "slim")
@@ -448,37 +435,6 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
                 .waitingFor(Wait.forLogMessage(".*boot success!.*", 1))
                 .withStartupTimeout(Duration.ofMinutes(5))
                 .withLogConsumer(new Slf4jLogConsumer(DockerLoggerFactory.getLogger(IMAGE)));
-    }
-
-    private void createNeededTables() {
-        try (Statement statement = connection.createStatement()) {
-            String createTemplate = jdbcCase.getCreateSql();
-
-            if (!jdbcCase.isUseSaveModeCreateTable()) {
-                if (jdbcCase.getSinkCreateSql() != null) {
-                    createTemplate = jdbcCase.getSinkCreateSql();
-                }
-                String createSink =
-                        String.format(
-                                createTemplate,
-                                buildTableInfoWithSchema(
-                                        jdbcCase.getDatabase(),
-                                        jdbcCase.getSchema(),
-                                        jdbcCase.getSinkTable()));
-                statement.execute(createSink);
-                log.info("oceanbase table created,sql is" + createSink);
-            }
-
-            connection.commit();
-        } catch (Exception exception) {
-            log.error(ExceptionUtils.getMessage(exception));
-            throw new SeaTunnelRuntimeException(JdbcITErrorCode.CREATE_TABLE_FAILED, exception);
-        }
-        log.info("oceanbase table created success!");
-    }
-
-    private String buildTableInfoWithSchema(String database, String schema, String table) {
-        return buildTableInfoWithSchema(database, table);
     }
 
     public String quoteIdentifier(String field) {

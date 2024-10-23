@@ -44,9 +44,14 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class OceanBaseMysqlJdbcRowConverter extends AbstractJdbcRowConverter {
+
+    public static List<String> vectorColumn = new ArrayList<>();
+
     @Override
     public String converterName() {
         return DatabaseIdentifier.OCENABASE;
@@ -100,6 +105,7 @@ public class OceanBaseMysqlJdbcRowConverter extends AbstractJdbcRowConverter {
                             arrays[i] = Float.parseFloat(stringArray[i]);
                         }
                         fields[fieldIndex] = BufferUtils.toByteBuffer(arrays);
+                        vectorColumn.add(fieldName);
                     }
                     break;
                 case DOUBLE:

@@ -40,10 +40,14 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.oceanbase.OceanBaseMysqlJdbcRowConverter.vectorColumn;
 
 @Slf4j
 public class OceanBaseMysqlDialect implements JdbcDialect {
@@ -96,8 +100,14 @@ public class OceanBaseMysqlDialect implements JdbcDialect {
     @Override
     public Optional<String> getUpsertStatement(
             String database, String tableName, String[] fieldNames, String[] uniqueKeyFields) {
+        Set<String> uniqueKeySet = new HashSet<>(Arrays.asList(uniqueKeyFields));
+        uniqueKeySet.addAll(vectorColumn);
         String updateClause =
                 Arrays.stream(fieldNames)
+                        .filter(
+                                fieldName ->
+                                        !uniqueKeySet.contains(
+                                                fieldName)) // Exclude uniqueKeyFields
                         .map(
                                 fieldName ->
                                         quoteIdentifier(fieldName)
