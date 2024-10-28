@@ -19,6 +19,7 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc;
 
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.common.exception.SeaTunnelRuntimeException;
+import org.apache.seatunnel.common.utils.ExceptionUtils;
 import org.apache.seatunnel.e2e.common.TestResource;
 import org.apache.seatunnel.e2e.common.TestSuiteBase;
 import org.apache.seatunnel.e2e.common.container.ContainerExtendedFactory;
@@ -147,6 +148,7 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
                 .untilAsserted(() -> this.initializeJdbcConnection(jdbcCase.getJdbcUrl()));
 
         createSchemaIfNeeded();
+        setObVectorMemoryLimit();
         this.container =
                 new MilvusContainer(MILVUS_IMAGE)
                         .withNetwork(NETWORK)
@@ -428,7 +430,7 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
 
     OceanBaseCEContainer initOceanbaseContainer() {
         return new OceanBaseCEContainer(IMAGE)
-                .withEnv("MODE", "mini")
+                .withEnv("MODE", "slim")
                 .withEnv("OB_DATAFILE_SIZE", "2G")
                 .withNetwork(NETWORK)
                 .withNetworkAliases(HOSTNAME)
@@ -478,5 +480,17 @@ public class JdbcOceanBaseMilvusIT extends TestSuiteBase implements TestResource
             rows.add(row);
         }
         return Pair.of(fieldNames, rows);
+    }
+
+    private void setObVectorMemoryLimit() {
+        try (Statement statement = connection.createStatement()) {
+            String setObVectorMemoryLimit = "ALTER SYSTEM ob_vector_memory_limit_percentage = 30";
+            statement.execute(setObVectorMemoryLimit);
+            connection.commit();
+        } catch (Exception exception) {
+            log.error(ExceptionUtils.getMessage(exception));
+            throw new SeaTunnelRuntimeException(JdbcITErrorCode.CREATE_TABLE_FAILED, exception);
+        }
+        log.info("oceanbase table created success!");
     }
 }

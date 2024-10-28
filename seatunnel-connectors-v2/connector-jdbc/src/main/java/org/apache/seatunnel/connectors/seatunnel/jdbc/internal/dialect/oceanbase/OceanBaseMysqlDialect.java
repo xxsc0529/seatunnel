@@ -101,25 +101,31 @@ public class OceanBaseMysqlDialect implements JdbcDialect {
     public Optional<String> getUpsertStatement(
             String database, String tableName, String[] fieldNames, String[] uniqueKeyFields) {
         Set<String> uniqueKeySet = new HashSet<>(Arrays.asList(uniqueKeyFields));
-        uniqueKeySet.addAll(vectorColumn);
-        String updateClause =
-                Arrays.stream(fieldNames)
-                        .filter(
-                                fieldName ->
-                                        !uniqueKeySet.contains(
-                                                fieldName)) // Exclude uniqueKeyFields
-                        .map(
-                                fieldName ->
-                                        quoteIdentifier(fieldName)
-                                                + "=VALUES("
-                                                + quoteIdentifier(fieldName)
-                                                + ")")
-                        .collect(Collectors.joining(", "));
-        String upsertSQL =
-                getInsertIntoStatement(database, tableName, fieldNames)
-                        + " ON DUPLICATE KEY UPDATE "
-                        + updateClause;
-        return Optional.of(upsertSQL);
+        if (!vectorColumn.isEmpty()) {
+            String upsertSQL =
+                    getInsertIntoStatement(database, tableName, fieldNames)
+                            .replaceFirst("INSERT", "REPLACE");
+            return Optional.of(upsertSQL);
+        } else {
+            String updateClause =
+                    Arrays.stream(fieldNames)
+                            .filter(
+                                    fieldName ->
+                                            !uniqueKeySet.contains(
+                                                    fieldName)) // Exclude uniqueKeyFields
+                            .map(
+                                    fieldName ->
+                                            quoteIdentifier(fieldName)
+                                                    + "=VALUES("
+                                                    + quoteIdentifier(fieldName)
+                                                    + ")")
+                            .collect(Collectors.joining(", "));
+            String upsertSQL =
+                    getInsertIntoStatement(database, tableName, fieldNames)
+                            + " ON DUPLICATE KEY UPDATE "
+                            + updateClause;
+            return Optional.of(upsertSQL);
+        }
     }
 
     @Override
