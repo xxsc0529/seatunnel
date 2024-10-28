@@ -101,29 +101,22 @@ public class OceanBaseMysqlDialect implements JdbcDialect {
     public Optional<String> getUpsertStatement(
             String database, String tableName, String[] fieldNames, String[] uniqueKeyFields) {
         Set<String> uniqueKeySet = new HashSet<>(Arrays.asList(uniqueKeyFields));
+        String baseSQL = getInsertIntoStatement(database, tableName, fieldNames);
         if (!vectorColumn.isEmpty()) {
-            String upsertSQL =
-                    getInsertIntoStatement(database, tableName, fieldNames)
-                            .replaceFirst("INSERT", "REPLACE");
-            return Optional.of(upsertSQL);
+            String replaceSQL = baseSQL.replaceFirst("INSERT", "REPLACE");
+            return Optional.of(replaceSQL);
         } else {
             String updateClause =
                     Arrays.stream(fieldNames)
-                            .filter(
-                                    fieldName ->
-                                            !uniqueKeySet.contains(
-                                                    fieldName)) // Exclude uniqueKeyFields
+                            .filter(fieldName -> !uniqueKeySet.contains(fieldName))
                             .map(
                                     fieldName ->
-                                            quoteIdentifier(fieldName)
-                                                    + "=VALUES("
-                                                    + quoteIdentifier(fieldName)
-                                                    + ")")
+                                            String.format(
+                                                    "%s=VALUES(%s)",
+                                                    quoteIdentifier(fieldName),
+                                                    quoteIdentifier(fieldName)))
                             .collect(Collectors.joining(", "));
-            String upsertSQL =
-                    getInsertIntoStatement(database, tableName, fieldNames)
-                            + " ON DUPLICATE KEY UPDATE "
-                            + updateClause;
+            String upsertSQL = baseSQL + " ON DUPLICATE KEY UPDATE " + updateClause;
             return Optional.of(upsertSQL);
         }
     }
