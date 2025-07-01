@@ -21,16 +21,20 @@ import org.apache.seatunnel.api.table.catalog.Column;
 import org.apache.seatunnel.api.table.catalog.TableSchema;
 import org.apache.seatunnel.api.table.converter.BasicTypeDefine;
 import org.apache.seatunnel.connectors.seatunnel.paimon.config.PaimonSinkConfig;
+import org.apache.seatunnel.connectors.seatunnel.paimon.config.PaimonSinkOptions;
 import org.apache.seatunnel.connectors.seatunnel.paimon.data.PaimonTypeMapper;
 import org.apache.seatunnel.connectors.seatunnel.paimon.exception.PaimonConnectorErrorCode;
 import org.apache.seatunnel.connectors.seatunnel.paimon.exception.PaimonConnectorException;
 
 import org.apache.paimon.CoreOptions;
 import org.apache.paimon.schema.Schema;
+import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.paimon.shade.org.apache.commons.lang.StringUtils;
 import org.apache.paimon.types.DataField;
 import org.apache.paimon.types.DataType;
+import org.apache.paimon.types.DataTypeJsonParser;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,8 +42,13 @@ import java.util.Optional;
 
 /** The util seatunnel schema to paimon schema */
 public class SchemaUtil {
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     public static DataType toPaimonType(Column column) {
+        if (column.getSinkType() != null) {
+            return DataTypeJsonParser.parseDataType(
+                    JSON_MAPPER.getNodeFactory().textNode(column.getSinkType()));
+        }
         BasicTypeDefine<DataType> basicTypeDefine = PaimonTypeMapper.INSTANCE.reconvert(column);
         return basicTypeDefine.getNativeType();
     }
@@ -60,6 +69,9 @@ public class SchemaUtil {
         if (primaryKeys.isEmpty() && Objects.nonNull(tableSchema.getPrimaryKey())) {
             primaryKeys = tableSchema.getPrimaryKey().getColumnNames();
         }
+        if (paimonSinkConfig.getNonPrimaryKey()) {
+            primaryKeys = Collections.emptyList();
+        }
         if (!primaryKeys.isEmpty()) {
             paiSchemaBuilder.primaryKey(primaryKeys);
         }
@@ -70,7 +82,7 @@ public class SchemaUtil {
         Map<String, String> writeProps = paimonSinkConfig.getWriteProps();
         CoreOptions.ChangelogProducer changelogProducer = paimonSinkConfig.getChangelogProducer();
         if (changelogProducer != null) {
-            writeProps.remove(PaimonSinkConfig.CHANGELOG_TMP_PATH);
+            writeProps.remove(PaimonSinkOptions.CHANGELOG_TMP_PATH);
         }
         if (!writeProps.isEmpty()) {
             paiSchemaBuilder.options(writeProps);
